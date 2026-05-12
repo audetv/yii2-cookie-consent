@@ -5,6 +5,7 @@ namespace audetv\cookieconsent;
 use Yii;
 use yii\base\Widget;
 use yii\i18n\PhpMessageSource;
+use yii\helpers\Html;
 use audetv\cookieconsent\assets\CookieConsentAsset;
 
 class CookieConsentWidget extends Widget
@@ -20,6 +21,7 @@ class CookieConsentWidget extends Widget
     public $registerCss = true;
     public $maxWidth = 1320;
     public $language;
+    public $parseMarkdown = true; // Включить парсинг Markdown-ссылок в кастомном тексте
     
     public function init()
     {
@@ -75,6 +77,29 @@ class CookieConsentWidget extends Widget
         }
         
         return null;
+    }
+    
+    /**
+     * Преобразует markdown-ссылки вида [текст](url "подсказка") в HTML
+     * @param string $text
+     * @return string
+     */
+    public function parseMarkdownLinks($text)
+    {
+        $pattern = '/\[([^\]]+)\]\(([^)]+)(?:\s+"([^"]+)")?\)/u';
+        
+        return preg_replace_callback($pattern, function($matches) {
+            $text = $matches[1];
+            $url = $matches[2];
+            $title = isset($matches[3]) ? $matches[3] : '';
+            
+            $options = ['target' => '_blank', 'rel' => 'noopener noreferrer'];
+            if ($title) {
+                $options['title'] = $title;
+            }
+            
+            return Html::a($text, $url, $options);
+        }, $text);
     }
     
     public function run()
@@ -175,14 +200,35 @@ JS;
         return $this->t('button_ok');
     }
     
-    public function getMessageText()
+    /**
+     * Получаем финальный текст для отображения
+     * @return string
+     */
+    public function getDisplayText()
     {
-        $value = $this->getLocalizedValue($this->text);
+        $customText = $this->getLocalizedValue($this->text);
         
-        if ($value !== null) {
-            return $value;
+        if ($customText !== null) {
+            // Кастомный текст
+            if ($this->parseMarkdown) {
+                return $this->parseMarkdownLinks($customText);
+            }
+            return $customText;
         }
         
-        return $this->t('cookie_consent_text');
+        // Стандартный текст со ссылками из настроек
+        $privacyLink = Html::a(
+            $this->getPrivacyLinkText(),
+            $this->getPrivacyUrl(),
+            ['target' => '_blank', 'rel' => 'noopener noreferrer']
+        );
+        
+        $termsLink = Html::a(
+            $this->getTermsLinkText(),
+            $this->getTermsUrl(),
+            ['target' => '_blank', 'rel' => 'noopener noreferrer']
+        );
+        
+        return $this->t('cookie_consent_text') . ' ' . $privacyLink . ' и ' . $termsLink . '.';
     }
 }
