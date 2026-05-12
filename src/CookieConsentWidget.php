@@ -22,13 +22,13 @@ class CookieConsentWidget extends Widget
     public $maxWidth = 1320;
     public $language;
     public $parseMarkdown = true; // Включить парсинг Markdown-ссылок в кастомном тексте
-    
+
     public function init()
     {
         parent::init();
         $this->setupI18n();
     }
-    
+
     protected function setupI18n()
     {
         // Всегда переопределяем категорию 'app' для виджета
@@ -39,13 +39,13 @@ class CookieConsentWidget extends Widget
             'forceTranslation' => true,
         ];
     }
-    
+
     protected function t($message, $params = [])
     {
         $language = $this->language ?: Yii::$app->language;
         return Yii::t('app', $message, $params, $language);
     }
-    
+
     /**
      * Получение локализованного значения параметра
      * @param string|array|null $param
@@ -56,29 +56,29 @@ class CookieConsentWidget extends Widget
         if ($param === null) {
             return null;
         }
-        
+
         if (is_string($param)) {
             return $param;
         }
-        
+
         if (is_array($param)) {
             $currentLanguage = $this->language ?: Yii::$app->language;
-            
+
             if (isset($param[$currentLanguage])) {
                 return $param[$currentLanguage];
             }
-            
+
             $defaultLanguage = Yii::$app->language;
             if (isset($param[$defaultLanguage])) {
                 return $param[$defaultLanguage];
             }
-            
+
             return reset($param);
         }
-        
+
         return null;
     }
-    
+
     /**
      * Преобразует markdown-ссылки вида [текст](url "подсказка") в HTML
      * @param string $text
@@ -86,40 +86,41 @@ class CookieConsentWidget extends Widget
      */
     public function parseMarkdownLinks($text)
     {
-        $pattern = '/\[([^\]]+)\]\(([^)]+)(?:\s+"([^"]+)")?\)/u';
-        
-        return preg_replace_callback($pattern, function($matches) {
-            $text = $matches[1];
-            $url = $matches[2];
-            $title = isset($matches[3]) ? $matches[3] : '';
-            
+        // Ищем [текст](url) или [текст](url "подсказка")
+        $pattern = '/\[([^\]]+)\]\(\s*([^\s"]+)(?:\s+"([^"]+)")?\s*\)/u';
+
+        return preg_replace_callback($pattern, function ($matches) {
+            $linkText = $matches[1];
+            $url = htmlspecialchars(trim($matches[2]), ENT_QUOTES, 'UTF-8');
+            $title = isset($matches[3]) ? htmlspecialchars(trim($matches[3]), ENT_QUOTES, 'UTF-8') : '';
+
             $options = ['target' => '_blank', 'rel' => 'noopener noreferrer'];
-            if ($title) {
+            if ($title !== '') {
                 $options['title'] = $title;
             }
-            
-            return Html::a($text, $url, $options);
+
+            return \yii\helpers\Html::a($linkText, $url, $options);
         }, $text);
     }
-    
+
     public function run()
     {
         if (isset($_COOKIE[$this->cookieName]) && $_COOKIE[$this->cookieName] === '1') {
             return '';
         }
-        
+
         $this->registerAssets();
-        
+
         return $this->render('consent', [
             'widget' => $this,
         ]);
     }
-    
+
     protected function registerAssets()
     {
         $view = $this->view;
         CookieConsentAsset::register($view);
-        
+
         $js = <<<JS
 (function() {
     var btn = document.getElementById('cookie-consent-btn');
@@ -140,15 +141,15 @@ class CookieConsentWidget extends Widget
 JS;
         $view->registerJs($js);
     }
-    
+
     public function getPrivacyUrl()
     {
         $value = $this->getLocalizedValue($this->privacyPolicyUrl);
-        
+
         if ($value !== null) {
             return $value;
         }
-        
+
         if (isset(Yii::$app->params['privacyUrl'])) {
             $paramValue = $this->getLocalizedValue(Yii::$app->params['privacyUrl']);
             if ($paramValue !== null) {
@@ -156,18 +157,18 @@ JS;
             }
             return Yii::$app->params['privacyUrl'];
         }
-        
+
         return '/privacy-policy';
     }
-    
+
     public function getTermsUrl()
     {
         $value = $this->getLocalizedValue($this->termsUrl);
-        
+
         if ($value !== null) {
             return $value;
         }
-        
+
         if (isset(Yii::$app->params['termsUrl'])) {
             $paramValue = $this->getLocalizedValue(Yii::$app->params['termsUrl']);
             if ($paramValue !== null) {
@@ -175,31 +176,31 @@ JS;
             }
             return Yii::$app->params['termsUrl'];
         }
-        
+
         return '/terms-of-use';
     }
-    
+
     public function getPrivacyLinkText()
     {
         return $this->t('privacy_policy_link');
     }
-    
+
     public function getTermsLinkText()
     {
         return $this->t('terms_link');
     }
-    
+
     public function getButtonText()
     {
         $value = $this->getLocalizedValue($this->buttonText);
-        
+
         if ($value !== null) {
             return $value;
         }
-        
+
         return $this->t('button_ok');
     }
-    
+
     /**
      * Получаем финальный текст для отображения
      * @return string
@@ -207,7 +208,7 @@ JS;
     public function getDisplayText()
     {
         $customText = $this->getLocalizedValue($this->text);
-        
+
         if ($customText !== null) {
             // Кастомный текст
             if ($this->parseMarkdown) {
@@ -215,20 +216,20 @@ JS;
             }
             return $customText;
         }
-        
+
         // Стандартный текст со ссылками из настроек
         $privacyLink = Html::a(
             $this->getPrivacyLinkText(),
             $this->getPrivacyUrl(),
             ['target' => '_blank', 'rel' => 'noopener noreferrer']
         );
-        
+
         $termsLink = Html::a(
             $this->getTermsLinkText(),
             $this->getTermsUrl(),
             ['target' => '_blank', 'rel' => 'noopener noreferrer']
         );
-        
+
         return $this->t('cookie_consent_text') . ' ' . $privacyLink . ' и ' . $termsLink . '.';
     }
 }
