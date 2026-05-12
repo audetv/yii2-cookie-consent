@@ -1,0 +1,25 @@
+{
+    "name": "audetv/yii2-cookie-consent",
+    "description": "Universal cookie consent widget for Yii2 framework with customizable theme, text, and legal document links",
+    "type": "yii2-extension",
+    "keywords": ["yii2", "cookie", "consent", "widget", "gdpr"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "audetv",
+            "homepage": "https://github.com/audetv"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "~2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "audetv\\cookieconsent\\": "src/"
+        }
+    },
+    "support": {
+        "issues": "https://github.com/audetv/yii2-cookie-consent/issues",
+        "source": "https://github.com/audetv/yii2-cookie-consent"
+    }
+}
