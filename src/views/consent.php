@@ -19,11 +19,13 @@ $termsLink = Html::a(
 
 <div id="cookie-consent-widget" 
      class="cookie-consent cookie-consent-<?= $widget->position ?> cookie-theme-<?= $widget->theme ?>"
-     style="display: flex;">
-    <div class="cookie-text">
-        <?= $widget->getMessageText() ?> <?= $privacyLink ?> и <?= $termsLink ?>.
+     style="--cookie-max-width: <?= $widget->maxWidth ?>px;">
+    <div class="cookie-container">
+        <div class="cookie-text">
+            <?= $widget->getMessageText() ?> <?= $privacyLink ?> и <?= $termsLink ?>.
+        </div>
+        <button id="cookie-consent-btn" class="cookie-btn">
+            <?= $widget->getButtonTextTranslated() ?>
+        </button>
     </div>
-    <button id="cookie-consent-btn" class="cookie-btn">
-        <?= $widget->getButtonTextTranslated() ?>
-    </button>
 </div>
