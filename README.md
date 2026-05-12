@@ -29,7 +29,7 @@
 composer require audetv/yii2-cookie-consent:dev-main
 ```
 
-### Прямым копированием (если Composer не работает)
+### Прямым копированием
 
 Скопируйте папку `src/` в `@app/components/cookieconsent/` и добавьте в `config/web.php`:
 
@@ -37,7 +37,7 @@ composer require audetv/yii2-cookie-consent:dev-main
 Yii::setAlias('@audetv/cookieconsent', '@app/components/cookieconsent');
 ```
 
-## ⚙️ Быстрое подключение
+## ⚡ Быстрое подключение
 
 В основном layout (`views/layouts/main.php`) перед закрывающим тегом `</body>`:
 
@@ -47,94 +47,132 @@ use audetv\cookieconsent\CookieConsentWidget;
 echo CookieConsentWidget::widget();
 ```
 
-После этого виджет появится внизу страницы со стандартными настройками.
-
-## 🎨 Настройка
-
-Все параметры можно передать прямо в `widget()`.
-
-### Основные параметры
+## 🎛️ Параметры виджета
 
 | Параметр | Тип | По умолчанию | Описание |
 |----------|-----|--------------|----------|
-| `theme` | string | `'light'` | Тема оформления: `light` или `dark` |
-| `position` | string | `'bottom'` | Положение: `bottom` или `top` |
-| `maxWidth` | int | `1320` | Максимальная ширина виджета (в пикселях) |
-| `buttonText` | string | `'Хорошо'` | Текст на кнопке |
-| `text` | string | `null` | Свой текст сообщения (если не нужен стандартный) |
-| `privacyPolicyUrl` | string | `null` | Ссылка на Политику конфиденциальности |
-| `termsUrl` | string | `null` | Ссылка на Пользовательское соглашение |
-| `cookieName` | string | `'cookie_consent_accepted'` | Имя cookie для хранения согласия |
-| `cookieExpireDays` | int | `365` | Срок жизни cookie (в днях) |
-| `registerCss` | bool | `true` | Подключать встроенные стили (`false` — отключить) |
+| `theme` | string | `'light'` | Тема: `light` или `dark` |
+| `position` | string | `'bottom'` | Позиция: `bottom` или `top` |
+| `maxWidth` | int | `1320` | Максимальная ширина (пиксели) |
+| `cookieName` | string | `'cookie_consent_accepted'` | Имя cookie для согласия |
+| `cookieExpireDays` | int | `365` | Срок жизни cookie (дни) |
+| `registerCss` | bool | `true` | Подключать встроенные стили |
+| `parseMarkdown` | bool | `true` | Парсить Markdown-ссылки в кастомном тексте |
+| `language` | string | `null` | Принудительный язык (если не указан — из приложения) |
 
-### Приоритет ссылок на документы
+## 📝 Настройка текста и кнопки
 
-1. Параметр, переданный в виджет (`privacyPolicyUrl` / `termsUrl`)
-2. Параметр приложения (`Yii::$app->params['privacyUrl']` / `Yii::$app->params['termsUrl']`)
-3. Значение по умолчанию (`/privacy-policy` / `/terms-of-use`)
+### Режим 1: Стандартный текст (из переводов)
 
-### Примеры настройки
-
-#### Минимальная настройка (только ссылки)
+Виджет автоматически использует переводы из `src/messages/`:
 
 ```php
-echo CookieConsentWidget::widget([
-    'privacyPolicyUrl' => '/page/privacy',
-    'termsUrl' => '/page/terms',
-]);
+echo CookieConsentWidget::widget();
+// Результат: "На сайте используются cookie-файлы... Политике конфиденциальности и Пользовательском соглашении."
 ```
 
-#### Тёмная тема и свой текст кнопки
+### Режим 2: Свой текст (строка) без ссылок
 
 ```php
 echo CookieConsentWidget::widget([
-    'theme' => 'dark',
+    'text' => 'Мы используем cookie для улучшения работы сайта.',
     'buttonText' => 'Понятно',
 ]);
 ```
 
-#### Полностью свой текст
+### Режим 3: Свой текст с Markdown-ссылками
 
 ```php
 echo CookieConsentWidget::widget([
-    'text' => 'Мы используем cookie для улучшения работы сайта. Нажимая "ОК", вы соглашаетесь с этим.',
-    'buttonText' => 'ОК',
+    'text' => 'Мы используем cookie. Подробнее в [Политике конфиденциальности](/privacy) и [Пользовательском соглашении](/terms).',
 ]);
 ```
 
-#### Bootstrap 4/5 (ширина 1140px)
+Ссылки открываются в новой вкладке.
+
+### Режим 4: Markdown-ссылки с подсказками (tooltips)
 
 ```php
 echo CookieConsentWidget::widget([
-    'maxWidth' => 1140,
+    'text' => 'Читайте [правила](/rules "Правила сайта") и [документацию](/docs "Техническая документация").',
 ]);
 ```
 
-#### Отключение встроенных стилей (своя вёрстка)
+### Режим 5: Мультиязычный текст (массив)
 
 ```php
 echo CookieConsentWidget::widget([
-    'registerCss' => false,
+    'text' => [
+        'ru' => 'Мы используем cookie-файлы для анализа трафика.',
+        'en' => 'We use cookies to analyze traffic.',
+    ],
+    'buttonText' => [
+        'ru' => 'OK',
+        'en' => 'OK',
+    ],
 ]);
 ```
 
-## 🌍 Локализация (i18n)
+Язык определяется автоматически из `Yii::$app->language`.
 
-Виджет автоматически использует язык приложения (`Yii::$app->language`).  
-Если язык равен `'ru-RU'` — текст будет на русском, если `'en-US'` — на английском.
+### Режим 6: Смешанный (русский — кастомный, английский — стандартный)
 
-Файлы переводов лежат в `src/messages/`.  
-При желании вы можете переопределить их в своём приложении.
+```php
+echo CookieConsentWidget::widget([
+    'text' => [
+        'ru' => 'Только для русского свой текст с [моей ссылкой](/my-link).',
+    ],
+    // Для английского используется стандартный текст из переводов
+]);
+```
 
-## 🎨 Стилизация
+### Режим 7: Отключение парсинга Markdown
 
-### Кастомизация через CSS
+```php
+echo CookieConsentWidget::widget([
+    'text' => 'Текст с [обычными] скобками, которые не должны быть ссылкой',
+    'parseMarkdown' => false,
+]);
+```
 
-Если нужно изменить стили (но оставить встроенные), переопределите классы:
+## 🔗 Настройка ссылок на документы
+
+### Для стандартного режима (без кастомного текста)
+
+```php
+echo CookieConsentWidget::widget([
+    'privacyPolicyUrl' => '/privacy',
+    'termsUrl' => '/terms',
+]);
+```
+
+### Мультиязычные ссылки
+
+```php
+echo CookieConsentWidget::widget([
+    'privacyPolicyUrl' => [
+        'ru' => '/privacy-policy',
+        'en' => '/en/privacy-policy',
+    ],
+    'termsUrl' => [
+        'ru' => '/terms-of-use',
+        'en' => '/en/terms-of-use',
+    ],
+]);
+```
+
+### Приоритет получения ссылок
+
+1. Параметр виджета (`privacyPolicyUrl` / `termsUrl`)
+2. Параметр приложения (`Yii::$app->params['privacyUrl']` / `Yii::$app->params['termsUrl']`)
+3. Значение по умолчанию (`/privacy-policy` / `/terms-of-use`)
+
+## 🎨 Кастомизация стилей
+
+### Через CSS-классы
 
 - `.cookie-consent` — основной контейнер
-- `.cookie-container` — внутренний контейнер с ограничением ширины
+- `.cookie-container` — внутренний контейнер (ограничение ширины)
 - `.cookie-theme-light` / `.cookie-theme-dark` — темы
 - `.cookie-text` — блок с текстом
 - `.cookie-btn` — кнопка
@@ -143,22 +181,50 @@ echo CookieConsentWidget::widget([
 
 ```css
 .cookie-consent {
-    background-color: #f0f0f0;
+    background-color: #f8f9fa;
 }
 
 .cookie-btn {
     background-color: #28a745;
 }
+
+.cookie-btn:hover {
+    background-color: #218838;
+}
 ```
 
-### Полная своя вёрстка
-
-Если нужно полностью переопределить HTML и CSS, отключите встроенные стили и напишите свои:
+### Отключение встроенных стилей
 
 ```php
 echo CookieConsentWidget::widget([
     'registerCss' => false,
-    'text' => 'Ваш HTML с <a href="/policy">ссылкой</a>',
+]);
+```
+
+## 🌍 Принудительный язык
+
+```php
+echo CookieConsentWidget::widget([
+    'language' => 'en-US', // Всегда английский, независимо от языка приложения
+]);
+```
+
+## 📦 Полный пример с настройками
+
+```php
+echo CookieConsentWidget::widget([
+    'theme' => 'dark',
+    'position' => 'bottom',
+    'maxWidth' => 1140,
+    'text' => [
+        'ru' => 'Мы используем cookie. Подробнее в [политике](/privacy "Как мы используем данные") и [правилах](/terms "Условия использования").',
+        'en' => 'We use cookies. Learn more in our [privacy policy](/privacy "How we use data") and [terms](/terms "Terms of use").',
+    ],
+    'buttonText' => [
+        'ru' => 'Согласен',
+        'en' => 'I agree',
+    ],
+    'cookieExpireDays' => 365,
 ]);
 ```
 
@@ -171,28 +237,27 @@ cd tests/app
 php -S localhost:8080 -t web
 ```
 
-Откройте `http://localhost:8080` — вы увидите виджет.
+### Проверка работы
 
-### Проверка cookie
+1. Откройте `http://localhost:8080`
+2. Виджет должен появиться внизу страницы
+3. Нажмите на кнопку — виджет исчезнет
+4. Обновите страницу — виджет больше не показывается
+5. Очистите cookie в инструментах разработчика — виджет снова появится
 
-1. Откройте инструменты разработчика (F12) → вкладка **Application** → **Cookies**
-2. Нажмите на кнопку виджета
-3. Должна появиться cookie `cookie_consent_accepted` со значением `1`
-4. Обновите страницу — виджет должен исчезнуть
-
-## 📦 Структура пакета
+## 📂 Структура пакета
 
 ```
 yii2-cookie-consent/
 ├── src/
-│   ├── CookieConsentWidget.php      # Основной класс виджета
+│   ├── CookieConsentWidget.php      # Основной класс
 │   ├── assets/
-│   │   ├── CookieConsentAsset.php   # Asset bundle
+│   │   ├── CookieConsentAsset.php
 │   │   └── css/
-│   │       └── cookie-consent.css   # Стили по умолчанию
+│   │       └── cookie-consent.css
 │   ├── views/
-│   │   └── consent.php              # HTML-шаблон
-│   └── messages/                    # Файлы переводов
+│   │   └── consent.php
+│   └── messages/                    # Переводы
 │       ├── ru-RU/
 │       │   └── app.php
 │       └── en-US/
@@ -201,23 +266,22 @@ yii2-cookie-consent/
 └── README.md
 ```
 
-## 🐛 Возможные проблемы
+## 🐛 Частые проблемы
 
 ### Виджет не исчезает после нажатия
 
-- Проверьте, что в браузере не отключены cookie
-- Очистите кеш браузера и cookie вручную
-- Проверьте консоль браузера на наличие ошибок JavaScript
+- Проверьте, что cookie не заблокированы браузером
+- Очистите кеш и cookie вручную
+- Откройте консоль браузера (F12) на наличие ошибок JavaScript
 
-### Текст не переводится
+### Текст на неправильном языке
 
-- Убедитесь, что в конфигурации приложения указан язык: `Yii::$app->language = 'ru-RU'`
-- Проверьте, что файлы переводов есть в `src/messages/`
+- Проверьте `Yii::$app->language` в конфигурации
+- Или передайте параметр `language` в виджет
 
-### Конфликт с другими переводами категории `app`
+### Конфликт переводов с приложением
 
-В виджете используется категория `app` с указанием своего `basePath`. Это безопасно для большинства проектов.  
-Если возник конфликт, создайте свою категорию (например, `cookieconsent`) и измените код в `setupI18n()`.
+Виджет переопределяет категорию `app` для своих переводов. Если в приложении уже используется эта категория, проверьте, что ваши переводы не затираются. При необходимости измените категорию в коде виджета.
 
 ## 📄 Лицензия
 
