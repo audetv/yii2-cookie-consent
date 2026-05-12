@@ -2,12 +2,10 @@
 
 namespace audetv\cookieconsent;
 
-use audetv\cookieconsent\assets\CookieConsentAsset;
 use Yii;
 use yii\base\Widget;
-use yii\helpers\Url;
 use yii\i18n\PhpMessageSource;
-
+use audetv\cookieconsent\assets\CookieConsentAsset;
 
 class CookieConsentWidget extends Widget
 {
@@ -20,51 +18,83 @@ class CookieConsentWidget extends Widget
     public $theme = 'light';
     public $position = 'bottom';
     public $registerCss = true;
-    public $maxWidth = 1320; // Максимальная ширина в пикселях
-
+    public $maxWidth = 1320;
+    public $language;
+    
     public function init()
     {
         parent::init();
         $this->setupI18n();
     }
-
+    
     protected function setupI18n()
     {
-        $category = 'app';
-
-        // Переопределяем настройки для категории 'app' ТОЛЬКО для нашего виджета
-        // Используем свой basePath, но не трогаем остальные приложения
-        Yii::$app->i18n->translations[$category] = [
+        // Всегда переопределяем категорию 'app' для виджета
+        Yii::$app->i18n->translations['app'] = [
             'class' => PhpMessageSource::class,
             'sourceLanguage' => 'en-US',
             'basePath' => '@audetv/cookieconsent/messages',
-            'forceTranslation' => true, // Принудительно переводим
+            'forceTranslation' => true,
         ];
     }
-
+    
     protected function t($message, $params = [])
     {
-        return Yii::t('app', $message, $params);
+        $language = $this->language ?: Yii::$app->language;
+        return Yii::t('app', $message, $params, $language);
     }
-
+    
+    /**
+     * Получение локализованного значения параметра
+     * @param string|array|null $param
+     * @return string|null
+     */
+    protected function getLocalizedValue($param)
+    {
+        if ($param === null) {
+            return null;
+        }
+        
+        if (is_string($param)) {
+            return $param;
+        }
+        
+        if (is_array($param)) {
+            $currentLanguage = $this->language ?: Yii::$app->language;
+            
+            if (isset($param[$currentLanguage])) {
+                return $param[$currentLanguage];
+            }
+            
+            $defaultLanguage = Yii::$app->language;
+            if (isset($param[$defaultLanguage])) {
+                return $param[$defaultLanguage];
+            }
+            
+            return reset($param);
+        }
+        
+        return null;
+    }
+    
     public function run()
     {
         if (isset($_COOKIE[$this->cookieName]) && $_COOKIE[$this->cookieName] === '1') {
             return '';
         }
-
+        
         $this->registerAssets();
-
+        
         return $this->render('consent', [
             'widget' => $this,
         ]);
     }
-
+    
     protected function registerAssets()
     {
         $view = $this->view;
         CookieConsentAsset::register($view);
-
+        
         $js = <<<JS
 (function() {
     var btn = document.getElementById('cookie-consent-btn');
@@ -85,56 +115,74 @@ class CookieConsentWidget extends Widget
 JS;
         $view->registerJs($js);
     }
-
+    
     public function getPrivacyUrl()
     {
-        if ($this->privacyPolicyUrl !== null) {
-            return $this->privacyPolicyUrl;
+        $value = $this->getLocalizedValue($this->privacyPolicyUrl);
+        
+        if ($value !== null) {
+            return $value;
         }
-
+        
         if (isset(Yii::$app->params['privacyUrl'])) {
+            $paramValue = $this->getLocalizedValue(Yii::$app->params['privacyUrl']);
+            if ($paramValue !== null) {
+                return $paramValue;
+            }
             return Yii::$app->params['privacyUrl'];
         }
-
-        return Url::toRoute('site/privacy');
+        
+        return '/privacy-policy';
     }
-
+    
     public function getTermsUrl()
     {
-        if ($this->termsUrl !== null) {
-            return $this->termsUrl;
+        $value = $this->getLocalizedValue($this->termsUrl);
+        
+        if ($value !== null) {
+            return $value;
         }
-
+        
         if (isset(Yii::$app->params['termsUrl'])) {
+            $paramValue = $this->getLocalizedValue(Yii::$app->params['termsUrl']);
+            if ($paramValue !== null) {
+                return $paramValue;
+            }
             return Yii::$app->params['termsUrl'];
         }
-
-        return Url::toRoute('site/terms');
+        
+        return '/terms-of-use';
     }
-
+    
     public function getPrivacyLinkText()
     {
         return $this->t('privacy_policy_link');
     }
-
+    
     public function getTermsLinkText()
     {
         return $this->t('terms_link');
     }
-
-    public function getButtonTextTranslated()
+    
+    public function getButtonText()
     {
-        if ($this->buttonText !== null) {
-            return $this->buttonText;
+        $value = $this->getLocalizedValue($this->buttonText);
+        
+        if ($value !== null) {
+            return $value;
         }
+        
         return $this->t('button_ok');
     }
-
+    
     public function getMessageText()
     {
-        if ($this->text !== null) {
-            return $this->text;
+        $value = $this->getLocalizedValue($this->text);
+        
+        if ($value !== null) {
+            return $value;
         }
+        
         return $this->t('cookie_consent_text');
     }
 }

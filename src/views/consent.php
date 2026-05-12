@@ -4,17 +4,27 @@ use yii\helpers\Html;
 /* @var $this \yii\web\View */
 /* @var $widget \audetv\cookieconsent\CookieConsentWidget */
 
-$privacyLink = Html::a(
-    $widget->getPrivacyLinkText(),
-    $widget->getPrivacyUrl(),
-    ['target' => '_blank', 'rel' => 'noopener noreferrer']
-);
+$isCustomText = ($widget->text !== null);
 
-$termsLink = Html::a(
-    $widget->getTermsLinkText(),
-    $widget->getTermsUrl(),
-    ['target' => '_blank', 'rel' => 'noopener noreferrer']
-);
+if ($isCustomText) {
+    // Пользователь передал свой текст
+    $messageText = $widget->getMessageText();
+} else {
+    // Стандартный текст со ссылками
+    $privacyLink = Html::a(
+        $widget->getPrivacyLinkText(),
+        $widget->getPrivacyUrl(),
+        ['target' => '_blank', 'rel' => 'noopener noreferrer']
+    );
+    
+    $termsLink = Html::a(
+        $widget->getTermsLinkText(),
+        $widget->getTermsUrl(),
+        ['target' => '_blank', 'rel' => 'noopener noreferrer']
+    );
+    
+    $messageText = $widget->getMessageText() . ' ' . $privacyLink . ' и ' . $termsLink . '.';
+}
 ?>
 
 <div id="cookie-consent-widget" 
@@ -22,10 +32,10 @@ $termsLink = Html::a(
      style="--cookie-max-width: <?= $widget->maxWidth ?>px;">
     <div class="cookie-container">
         <div class="cookie-text">
-            <?= $widget->getMessageText() ?> <?= $privacyLink ?> и <?= $termsLink ?>.
+            <?= $messageText ?>
         </div>
         <button id="cookie-consent-btn" class="cookie-btn">
-            <?= $widget->getButtonTextTranslated() ?>
+            <?= Html::encode($widget->getButtonText()) ?>
         </button>
     </div>
 </div>
